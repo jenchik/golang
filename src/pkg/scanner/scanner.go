@@ -96,7 +96,7 @@ func (this *Scanner) NextInt() int {
 	return 0;
 }
 
-func (this *Scanner) HasNextInt() bool {
+func (this *Scanner) hasNextSth(tester func(s string) bool) bool {
 	for {
 		next := this.nextBuffedToken();
 		
@@ -107,8 +107,7 @@ func (this *Scanner) HasNextInt() bool {
 		if len(next.s) > 0 {
 			// we have the data, check if it's an int
 			
-			_, e := strconv.Atoi(next.s);
-			if e == nil {
+			if tester(next.s) {
 				return true;
 			} else {
 				return false;
@@ -121,6 +120,35 @@ func (this *Scanner) HasNextInt() bool {
 	panicln("should not reach here");
 	return false;
 }
+
+func (this *Scanner) HasNextInt() bool {
+	return this.hasNextSth(func(s string) bool {
+		_, e := strconv.Atoi(s);
+		return e == nil;
+	});
+}
+
+func (this *Scanner) HasNextInt64() bool {
+	return this.hasNextSth(func(s string) bool {
+		_, e := strconv.Atoi64(s);
+		return e == nil;
+	});
+}
+
+func (this *Scanner) HasNextUint() bool {
+	return this.hasNextSth(func(s string) bool {
+		_, e := strconv.Atoui(s);
+		return e == nil;
+	});
+}
+
+func (this *Scanner) HasNextUint64() bool {
+	return this.hasNextSth(func(s string) bool {
+		_, e := strconv.Atoui64(s);
+		return e == nil;
+	});
+}
+
 
 func main() {
 	input := `    125  6   00 9139081 1309714037 1037104 0183
