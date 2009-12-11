@@ -1,8 +1,6 @@
-package main
+package scanner
 
 import (
-	"fmt";
-	"strings";
 	"io";
 	"bufio";
 	"bytes";
@@ -10,8 +8,11 @@ import (
 	"os";
 	"container/list";
 	"strconv";
+	"strings";
 )
 
+// Scanner is an object that reads a byte-oriented stream and converts human-readable values
+// to integers, tokens, and lines. Create a Scanner using NewScanner or NewScannerString.
 type Scanner struct {
 	in *bufio.Reader;
 	list *list.List;
@@ -23,10 +24,18 @@ type sd struct {
 	err os.Error;
 }
 
+// Creates a new Scanner with io.Reader as input source
 func NewScanner(r io.Reader) *Scanner {
-	s := Scanner{in: bufio.NewReader(r)};
-	s.list = list.New();
-	return &s;
+	sc := Scanner{in: bufio.NewReader(r)};
+	sc.list = list.New();
+	return &sc;
+}
+
+// Creates a new Scanner with a string as input source
+func NewScannerString(s string) *Scanner {
+	sc := Scanner{in: bufio.NewReader(strings.NewReader(s))};
+	sc.list = list.New();
+	return &sc;
 }
 
 func (this *Scanner) nextToken() (s string, delim int, err os.Error) {
@@ -56,14 +65,25 @@ func (this *Scanner) nextToken() (s string, delim int, err os.Error) {
 	return;
 }
 
-func (this *Scanner) nextBuffedToken() sd {
-	if this.list.Len() == 0 {
+func (this *Scanner) nextBuffedToken(after *list.Element) *list.Element {
+	if after == nil { // get the first one only
+		if this.list.Len() == 0 {
+			s, delim, err := this.nextToken();
+			next := sd{s: s, delim: delim, err: err};
+			this.list.PushBack(next);
+		}
+		return this.list.Front();
+	}
+
+	// get the one after /after
+	if after.Next() == nil {
 		s, delim, err := this.nextToken();
 		next := sd{s: s, delim: delim, err: err};
 		this.list.PushBack(next);
 	}
-	
-	return this.list.Front().Value.(sd);
+	// debug assert
+	if after.Next() == nil { panicln("after.Next() == nil") };
+	return after.Next();
 }
 
 func (this *Scanner) popBuff() {
@@ -73,21 +93,21 @@ func (this *Scanner) popBuff() {
 	this.list.Remove(this.list.Front());
 }
 
-func (this *Scanner) NextInt() int {
+func (this *Scanner) nextSth(converter func(string) (int64, os.Error)) int64 {
 	for {
-		next := this.nextBuffedToken();
+		next := this.nextBuffedToken(nil).Value.(sd);
 
 		if next.err != nil {
 			panicln("Error encountered. Call Has* funcs before calling this");
 		} else {
-			defer this.popBuff();
-			
+			this.popBuff(); // remove either empty or non-empty token
+
 			if len(next.s) > 0 {
-				// yeah!
-				if v, e := strconv.Atoi(next.s); e == nil {
+				// yeah! sure will return
+				if v, e := converter(next.s); e == nil {
 					return v;
 				} else {
-					panicln("String data was " + next.s + ". Cannot convert to int");
+					panicln("Cannot convert to int: '" + next.s + "'");
 				}
 			}
 		}
@@ -96,26 +116,95 @@ func (this *Scanner) NextInt() int {
 	return 0;
 }
 
-func (this *Scanner) hasNextSth(tester func(s string) bool) bool {
+// Reads an int from the input. Call HasNextInt first to check whether an int can be read.
+func (this *Scanner) NextInt() int {
+	res := this.nextSth(func(s string) (v int64, e os.Error) {
+		v_, e := strconv.Atoi(s);
+		v = int64(v_);
+		return;
+	});
+	return int(res);
+}
+
+// Reads an int64 from the input. Call HasNextInt64 first to check whether an int64 can be read.
+func (this *Scanner) NextInt64() int64 {
+	return this.nextSth(func(s string) (v int64, e os.Error) {
+		v, e = strconv.Atoi64(s);
+		return;
+	});
+}
+
+// Reads a uint from the input. Call HasNextUint first to check whether an uint can be read.
+func (this *Scanner) NextUint() uint {
+	res := this.nextSth(func(s string) (v int64, e os.Error) {
+		v_, e := strconv.Atoui(s);
+		v = int64(v_);
+		return;
+	});
+	return uint(res);
+}
+
+// Reads a uint64 from the input. Call HasNextUint64 first to check whether an uint64 can be read.
+func (this *Scanner) NextUint64() uint64 {
+	res := this.nextSth(func(s string) (v int64, e os.Error) {
+		v_, e := strconv.Atoui64(s);
+		v = int64(v_);
+		return;
+	});
+	return uint64(res);
+}
+
+// Reads the input stream from the current position until the line terminator is encountered, or
+// the end of input stream is reached. The line terminator is not included.
+// Call HasNextLine first to check whether a line can be read.
+func (this *Scanner) NextLine() string {
+	buf := bytes.NewBufferString("");
+	
 	for {
-		next := this.nextBuffedToken();
+		next := this.nextBuffedToken(nil).Value.(sd);
+
+		if next.err != nil {
+			if buf.Len() == 0 {
+				panicln("Error encountered. Call Has* funcs before calling this");
+			} else {
+				// return last line
+				return buf.String();
+			}
+		} else {
+			this.popBuff(); // remove either empty or non-empty token
+			buf.WriteString(next.s); // and put the string
+
+			// is the delim a newline sign?
+			if next.delim == '\n' {
+				return buf.String();
+			}
+
+			// and the delim, too, because it was not a new line sign
+			buf.WriteString(string(next.delim));
+		}
+	}
+	
+	panicln("should not reach here");
+	return "";
+}
+
+func (this *Scanner) hasNextSth(tester func(s string) bool) bool {
+	after := (*list.Element)(nil);
+	for {
+		nextElement := this.nextBuffedToken(after);
+		next := nextElement.Value.(sd);
 		
 		if next.err != nil {
 			return false;
 		}
 		
 		if len(next.s) > 0 {
-			// we have the data, check if it's an int
-			
-			if tester(next.s) {
-				return true;
-			} else {
-				return false;
-			}
+			// we have the data, check if it's an int/uint etc
+			return tester(next.s);
 		}
 		
-		// last was double-delimiter. so we go back to loop after removing first element.
-		this.popBuff();
+		// last was double-delimiter. so we go back to loop after skipping the first element.
+		after = nextElement;
 	}
 	panicln("should not reach here");
 	return false;
@@ -149,19 +238,9 @@ func (this *Scanner) HasNextUint64() bool {
 	});
 }
 
-
-func main() {
-	input := `    125  6   00 9139081 1309714037 1037104 0183
-	 
-	  
-	   091 apa        kabar 0      `;
-
-	s := strings.NewReader(input);
-	sc := NewScanner(s);
-	
-	for sc.HasNextInt() {
-		fmt.Println(sc.NextInt());
-	}
-	
-	println("beres");
+func (this *Scanner) HasNextLine() bool {
+	// simple. Just check if next token is not EOF
+	next := this.nextBuffedToken(nil).Value.(sd);
+	return next.err == nil;
 }
+
