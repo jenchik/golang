@@ -10,6 +10,7 @@ import (
 
 var emptyString = ""
 
+// Prints to the writer the value with indentation.
 func Fdump(out io.Writer, v_ interface{}) {
 	// forward decl
 	var dump0 func(r.Value, int);
@@ -173,4 +174,6 @@ func Fdump(out io.Writer, v_ interface{}) {
 	fmt.Fprintf(out, "\n");
 }
 
+// Print to standard out the value that is passed as the argument with indentation.
+// Pointers are dereferenced.
 func Dump(v_ interface{}) { Fdump(os.Stdout, v_) }

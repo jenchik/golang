@@ -116,6 +116,25 @@ func (this *Scanner) nextSth(converter func(string) (int64, os.Error)) int64 {
 	return 0;
 }
 
+// Reads a non-whitespace sequence of characters from the input.
+// Leading whitespaces are skipped.
+func (this *Scanner) Next() string {
+	for {
+		next := this.nextBuffedToken(nil).Value.(sd);
+
+		if next.err != nil {
+			panicln("Error encountered. Call Has* funcs before calling this");
+		} else {
+			this.popBuff(); // remove either empty or non-empty token
+
+			if len(next.s) > 0 {
+				return next.s;
+			}
+		}
+	}
+	panicln("should not reach here");
+}
+
 // Reads an int from the input. Call HasNextInt first to check whether an int can be read.
 func (this *Scanner) NextInt() int {
 	res := this.nextSth(func(s string) (v int64, e os.Error) {
@@ -207,7 +226,6 @@ func (this *Scanner) hasNextSth(tester func(s string) bool) bool {
 		after = nextElement;
 	}
 	panicln("should not reach here");
-	return false;
 }
 
 func (this *Scanner) HasNextInt() bool {
@@ -236,6 +254,10 @@ func (this *Scanner) HasNextUint64() bool {
 		_, e := strconv.Atoui64(s);
 		return e == nil;
 	});
+}
+
+func (this *Scanner) HasNext() bool {
+	return this.hasNextSth(func(string) bool { return true });
 }
 
 func (this *Scanner) HasNextLine() bool {

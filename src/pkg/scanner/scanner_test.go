@@ -36,14 +36,20 @@ func TestScanner2(t *testing.T) {
 		}
 	}
 	{
-		s := strings.NewReader(input);
-		sc := NewScanner(s);
+		sc := NewScannerString(input);
 		
 		fmt.Printf("uint:#%d#\n", sc.NextUint());
 		fmt.Printf("uint:#%d#\n", sc.NextUint());
 		
 		for sc.HasNextLine() {
 			fmt.Println("line:#" + sc.NextLine() + "#");
+		}
+	}
+	{
+		sc := NewScannerString(input);
+		
+		for sc.HasNext() {
+			fmt.Println("token:#" + sc.Next() + "#");
 		}
 	}
 }
@@ -55,6 +61,7 @@ func testHasNext(s string) {
 	fmt.Println(s, "has int64 =", sc.HasNextInt64());
 	fmt.Println(s, "has uint =", sc.HasNextUint());
 	fmt.Println(s, "has uint64 =", sc.HasNextUint64());
+	fmt.Println(s, "has line =", sc.HasNextLine());
 }
 
 func TestScanner3(t *testing.T) {
