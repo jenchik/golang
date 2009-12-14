@@ -1,3 +1,5 @@
+// Scanner is a simple parser for primitive types like int, float, and strings.
+// It takes an io.Reader as input and produces primitive variables.
 package scanner
 
 import (
@@ -228,6 +230,7 @@ func (this *Scanner) hasNextSth(tester func(s string) bool) bool {
 	panicln("should not reach here");
 }
 
+// Checks if the input stream still has an int to be read using NextInt.
 func (this *Scanner) HasNextInt() bool {
 	return this.hasNextSth(func(s string) bool {
 		_, e := strconv.Atoi(s);
@@ -235,6 +238,7 @@ func (this *Scanner) HasNextInt() bool {
 	});
 }
 
+// Checks if the input stream still has an int64 to be read using NextInt64.
 func (this *Scanner) HasNextInt64() bool {
 	return this.hasNextSth(func(s string) bool {
 		_, e := strconv.Atoi64(s);
@@ -242,6 +246,7 @@ func (this *Scanner) HasNextInt64() bool {
 	});
 }
 
+// Checks if the input stream still has a uint to be read using NextUint.
 func (this *Scanner) HasNextUint() bool {
 	return this.hasNextSth(func(s string) bool {
 		_, e := strconv.Atoui(s);
@@ -249,6 +254,7 @@ func (this *Scanner) HasNextUint() bool {
 	});
 }
 
+// Checks if the input stream still has a uint64 to be read using NextUint64.
 func (this *Scanner) HasNextUint64() bool {
 	return this.hasNextSth(func(s string) bool {
 		_, e := strconv.Atoui64(s);
@@ -256,10 +262,12 @@ func (this *Scanner) HasNextUint64() bool {
 	});
 }
 
+// Checks if the input stream still has a sequence of non-whitespace characters to be read using Next.
 func (this *Scanner) HasNext() bool {
 	return this.hasNextSth(func(string) bool { return true });
 }
 
+// Checks if the input stream still has a line to read using NextLine.
 func (this *Scanner) HasNextLine() bool {
 	// simple. Just check if next token is not EOF
 	next := this.nextBuffedToken(nil).Value.(sd);
