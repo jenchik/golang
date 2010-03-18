@@ -41,7 +41,7 @@ func Fdump(out io.Writer, v_ interface{}) {
 
 		printv := func(o interface{}) { fmt.Fprintf(out, "%v", o) };
 
-		printf := func(s string, args ...) { fmt.Fprintf(out, s, args) };
+		printf := func(s string, args ...interface{}) { fmt.Fprintf(out, s, args) };
 
 		// prevent circular for composite types
 		switch o := v.(type) {

@@ -28,7 +28,9 @@ type Circular struct {
 func TestDump(t *testing.T) {
 	// empty
 
-	file, e := parser.ParseFile("dump_test.go", nil, parser.ParseComments);
+	// func ParseFile(filename string, src interface{}, scope *ast.Scope, mode uint) (*ast.File, os.Error)
+
+	file, e := parser.ParseFile("dump_test.go", nil, nil, parser.ParseComments);
 	if e != nil {
 		fmt.Println("error", e)
 	} else {
